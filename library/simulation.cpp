@@ -11,6 +11,10 @@ namespace StochasticSimulation {
         return basic_reaction{{*this}, {std::move(other)}};
     }
 
+    basic_reaction reactant::operator>>=(reactant_collection other) {
+        return basic_reaction{{*this}, std::move(other)};
+    }
+
     reactant_collection reactant::operator+(reactant other) {
         return reactant_collection{*this, std::move(other)};
     }

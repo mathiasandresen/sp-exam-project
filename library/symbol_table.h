@@ -51,6 +51,10 @@ namespace StochasticSimulation {
             }
         }
 
+        bool contains(const std::string& key) {
+            return map.contains(key);
+        }
+
         std::unordered_map<std::string, T> getMap() {
             return map;
         }
