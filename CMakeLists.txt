@@ -14,7 +14,8 @@ add_library(
     library/simulation.cpp
     library/simulation.cpp
     library/symbol_table.h
-)
+    library/simulation_monitor.h
+        library/data.h library/data.cpp)
 
 #add_library(
 #    matplotlib_cpp

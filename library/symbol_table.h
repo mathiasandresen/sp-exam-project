@@ -26,14 +26,23 @@ namespace StochasticSimulation {
         }
     };
 
-
     template<typename T>
 
     class symbol_table: public std::iterator<std::output_iterator_tag, T> {
+        using map_type = std::unordered_map<std::string, T>;
     private:
-        std::unordered_map<std::string, T> map{};
+        map_type map{};
     public:
+        using iterator = typename map_type::iterator;
+        using const_iterator = typename map_type::const_iterator;
+
         symbol_table<T>() = default;
+
+        symbol_table<T>(const symbol_table<T>& a) = default;
+
+//        ~symbol_table() = default;
+//
+//        symbol_table& operator=(const symbol_table&) = default;
 
         void put(const std::string& key, T value) {
             if (!map.contains(key)) {
@@ -43,7 +52,15 @@ namespace StochasticSimulation {
             }
         }
 
-        T get(const std::string& key) {
+        T& get(const std::string& key) {
+            try {
+                return map.at(key);
+            } catch (std::out_of_range& e) {
+                throw SymbolTableException("Key was not found in symbol table");
+            }
+        }
+
+        const T& get(const std::string& key) const {
             try {
                 return map.at(key);
             } catch (std::out_of_range& e) {
@@ -59,10 +76,23 @@ namespace StochasticSimulation {
             return map;
         }
 
+        iterator begin() {
+            return map.begin();
+        }
+
+        iterator end() {
+            return map.end();
+        }
+
+        const_iterator begin() const {
+            return map.begin();
+        }
+
+        const_iterator end() const {
+            return map.end();
+        }
+
     };
-
-
-
 }
 
 #endif //SP_EXAM_PROJECT_SYMBOL_TABLE_H

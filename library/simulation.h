@@ -17,121 +17,72 @@
 #include <sstream>
 #include <fstream>
 #include <chrono>
+#include <thread>
+#include <future>
 #include "symbol_table.h"
+#include "simulation_monitor.h"
+#include "data.h"
 
 namespace StochasticSimulation {
 
-    struct basic_reaction;
-    class reactant_collection;
+    class simulation_trajectory: public std::map<double_t, simulation_state> {
+    private:
+        double_t largest_time{-1};
+        static double_t compute_interpolated_value(const std::string& key, std::shared_ptr<simulation_state> s0, std::shared_ptr<simulation_state> s1, double_t x);
+    public:
+        using std::map<double_t, simulation_state>::map;
 
-    struct reactant {
-        std::string name;
-        size_t amount;
-        size_t required{1}; //TODO: This should properly be changed
+        simulation_trajectory(const simulation_trajectory&) = default;
+        simulation_trajectory(simulation_trajectory&&) = default;
 
-        reactant(std::string name, size_t initial_amount):
-            name(std::move(name)),
-            amount(initial_amount)
-        {}
+        static simulation_trajectory compute_mean_trajectory(std::vector<simulation_trajectory> trajectories);
 
-        reactant(std::string name, size_t initial_amount, size_t required):
-                name(std::move(name)),
-                amount(initial_amount),
-                required(required)
-        {}
-
-        basic_reaction operator>>=(reactant other);
-
-        basic_reaction operator>>=(reactant_collection other);
-
-        reactant_collection operator+(reactant other);
-
-        reactant operator*(size_t req) {
-            required = req;
-            return *this;
+        void insert(simulation_state state) {
+            if (state.time > largest_time) {
+                largest_time = state.time;
+            }
+            insert_or_assign(state.time, std::move(state));
         }
 
-    };
+        void write_csv(const std::string& path) {
+            std::ofstream csv_file;
+            csv_file.open(path);
 
-    class reactant_collection: public std::vector<reactant> {
-    public:
-        using std::vector<reactant>::vector;
-        basic_reaction operator>>=(reactant other);
-        basic_reaction operator>>=(reactant_collection other);
-    };
+            auto reactants = begin()->second.reactants;
 
-    struct basic_reaction {
-        reactant_collection from;
-        reactant_collection to;
-    };
-
-    class reaction {
-    public:
-        basic_reaction basicReaction;
-        std::optional<std::vector<reactant>> catalysts;
-        double_t rate{};
-        double_t delay{-1};
-
-        reaction(basic_reaction basicReaction, std::initializer_list<reactant> catalysts, double rate):
-            basicReaction(std::move(basicReaction)),
-            catalysts(catalysts),
-            rate(rate)
-        {}
-
-        reaction(basic_reaction basicReaction, double rate):
-                basicReaction(std::move(basicReaction)),
-                catalysts{},
-                rate(rate)
-        {}
-
-        void compute_delay(symbol_table<std::shared_ptr<reactant>>& reactants, std::default_random_engine& engine) {
-            size_t reactant_amount{1};
-            size_t catalyst_amount{1};
-
-            for (auto& reactant: basicReaction.from) {
-                reactant_amount *= reactants.get(reactant.name)->amount;
+            for (auto& reactant : reactants) {
+                csv_file << reactant.second.name << ",";
             }
-            if (catalysts.has_value()) {
-                for (auto& catalyst: catalysts.value()) {
-                    catalyst_amount *= reactants.get(catalyst.name)->amount;
+            csv_file << "time" << std::endl;
+
+            for (auto& state : *this) {
+                for (auto& reactant: reactants) {
+                    csv_file << state.second.reactants.get(reactant.second.name).amount << ",";
                 }
+                csv_file << state.second.time << std::endl;
             }
 
-            double_t rate_k = rate * reactant_amount * catalyst_amount;
-
-            if (rate_k > 0) {
-                delay = std::exponential_distribution<double_t>(rate_k)(engine);
-            } else {
-                delay = -1;
-            }
+            csv_file.close();
         }
 
-        friend std::ostream &operator<<(std::ostream &s, const reaction &reaction);
+        double_t get_max_time() {
+            return largest_time;
+        }
     };
-
-//    struct simulation_state {
-//    public:
-//        simulation_state(std::shared_ptr<symbol_table<std::shared_ptr<reactant>>> reactants, std::shared_ptr<std::vector<reaction>> reactions, std::shared_ptr<double_t> time):
-//            reactants{reactants},
-//            reactions{reactions},
-//            time{time}
-//        {};
-//        const std::shared_ptr<symbol_table<std::shared_ptr<reactant>>> reactants;
-//        const std::shared_ptr<std::vector<reaction>> reactions;
-//        const std::shared_ptr<double_t> time;
-//    };
 
     class vessel_t {
     private:
         std::vector<reaction> reactions{};
-        symbol_table<std::shared_ptr<reactant>> reactants;
+        symbol_table<reactant> reactants;
     public:
+//        simulation_trajectory trajectory{};
+
         reactant operator()(std::string name, size_t initial_amount) {
-            std::shared_ptr<reactant> newReactant(new reactant(std::move(name), initial_amount));
+            reactant newReactant{std::move(name), initial_amount};
 
-            reactants.put(newReactant->name, newReactant);
+            reactants.put(newReactant.name, newReactant);
 
-            return *newReactant;
+            return newReactant;
         }
 
         reaction operator()(basic_reaction basicReaction, std::initializer_list<reactant> catalysts, double rate) {
@@ -163,12 +114,12 @@ namespace StochasticSimulation {
 
         reactant environment() {
             if (reactants.contains("__env__")) {
-               return *reactants.get("__env__");
+               return reactants.get("__env__");
             }
 
             std::shared_ptr<reactant> newReactant(new reactant("__env__", 0, 0));
 
-            reactants.put(newReactant->name, newReactant);
+            reactants.put(newReactant->name, *newReactant);
 
             return *newReactant;
         }
@@ -181,11 +132,11 @@ namespace StochasticSimulation {
 
             auto i = 0;
             for (auto& reactant: reactants.getMap()) {
-                if (reactant.second->name != "__env__") {
-                    node_map.put(reactant.second->name, "s" + std::to_string(i));
+                if (reactant.second.name != "__env__") {
+                    node_map.put(reactant.second.name, "s" + std::to_string(i));
 
-                    str << node_map.get(reactant.second->name)
-                        << "[label=\"" << reactant.second->name << "\",shape=\"box\",style=\"filled\",fillcolor=\"cyan\"];" << std::endl;
+                    str << node_map.get(reactant.second.name)
+                        << "[label=\"" << reactant.second.name << "\",shape=\"box\",style=\"filled\",fillcolor=\"cyan\"];" << std::endl;
                     i++;
                 }
             }
@@ -224,39 +175,30 @@ namespace StochasticSimulation {
             system("dot -Tpng -o graph.png graph.dot");
         }
 
-        symbol_table<std::shared_ptr<reactant>> getState() {
+        symbol_table<reactant> get_reactants() {
             return reactants;
         }
 
-//        void do_simulation(double_t end_time, const std::function<void(double_t, symbol_table<std::shared_ptr<reactant>>, std::vector<reaction>)>& monitor) {
-//            do_simulation(end_time, monitor)
-//        }
 
-        void do_simulation(double_t end_time, const std::function<void(double_t, symbol_table<std::shared_ptr<reactant>>, std::vector<reaction>)>& monitor) {
+        simulation_trajectory do_simulation(double_t end_time, simulation_monitor& monitor) {
+            simulation_trajectory trajectory{};
+
             double_t t{0};
-
-
-//            std::random_device rd;
             std::default_random_engine engine{};
-
             auto epoch = std::chrono::system_clock::now().time_since_epoch().count();
-//
-//
             engine.seed(epoch);
+
+            simulation_state initial_state{reactants, t};
+            trajectory.insert(std::move(initial_state));
 
             while (t <= end_time) {
                 for (reaction& reaction: reactions) {
-                    reaction.compute_delay(reactants, engine);
+                    reaction.compute_delay(trajectory.at(t), engine);
                 }
-
-//                std::sort(reactions.begin(), reactions.end(), [](reaction& a, reaction& b){return a.delay < b.delay;});
-//                auto lowerBound = std::lower_bound(reactions.begin(), reactions.end(), 0, [](reaction& a, double_t value){return a.delay < value;});
-//                auto r = *std::min_element(reactions.begin(), reactions.end(), [](reaction& a, reaction& b) {
-//                    return a.delay < b.delay);
-//                });
 
                 auto r = reactions.front();
 
+                // Select reaction with min delay which is not -1
                 for (auto& reaction: reactions) {
                     if (reaction.delay == -1) {
                         continue;
@@ -267,31 +209,84 @@ namespace StochasticSimulation {
                     }
                 }
 
+                // Stop if we have no reactions to do, thus r.delay == -1
                 if (r.delay == -1) {
-                    return;
+                    break;
                 }
+
+                auto last_state = trajectory.at(t);
 
                 t += r.delay;
 
+                simulation_state state{last_state.reactants, t};
+
                 if (
-                    std::all_of(r.basicReaction.from.begin(), r.basicReaction.from.end(), [&reactants = reactants](reactant& e){return reactants.get(e.name)->amount >= e.required;}) &&
+                    std::all_of(r.basicReaction.from.begin(), r.basicReaction.from.end(), [&state](reactant& e){return state.reactants.get(e.name).amount >= e.required;}) &&
                     (
                         !r.catalysts.has_value() ||
-                        std::all_of(r.catalysts.value().begin(), r.catalysts.value().end(), [&reactants = reactants](reactant& e){return reactants.get(e.name)->amount >= e.required;})
+                        std::all_of(r.catalysts.value().begin(), r.catalysts.value().end(), [&state](reactant& e){return state.reactants.get(e.name).amount >= e.required;})
                     )
                 ) {
                     for (auto& reactant: r.basicReaction.from) {
-                        reactants.get(reactant.name)->amount -= reactant.required;
+                        state.reactants.get(reactant.name).amount -= reactant.required;
                     }
                     for (auto& reactant: r.basicReaction.to) {
-                        reactants.get(reactant.name)->amount += reactant.required;
+                        state.reactants.get(reactant.name).amount += reactant.required;
                     }
                 }
 
-//                std::cout << "selected: " << r << std::endl;
+                trajectory.insert(std::move(state));
 
-                monitor(t, reactants, reactions);
+                monitor.monitor(trajectory.at(t));
             }
+
+            return trajectory;
+        }
+
+        simulation_trajectory do_simulation(double_t end_time) {
+            return do_simulation(end_time, EMPTY_SIMULATION_MONITOR);
+        }
+
+        std::vector<simulation_trajectory> do_multiple_simulations(double_t end_time, size_t simulations_to_run) {
+            //TODO: only doing 48 when set to 50 - this is because of the simulations_per_thread calculation
+            //TODO: exception when doing circadian
+            auto result = std::vector<simulation_trajectory>{};
+            auto futures = std::vector<std::future<std::vector<simulation_trajectory>>>{};
+
+            auto cores = std::thread::hardware_concurrency();
+            auto amount_of_threads = std::min(cores, simulations_to_run);
+            auto simulations_per_thread = simulations_to_run / amount_of_threads;
+
+            for (int i = 1; i <= amount_of_threads; i++ ) {
+                std::future<std::vector<simulation_trajectory>> future = std::async(std::launch::async, [&vessel = *this, &end_time, &simulations_per_thread](){
+                    std::vector<simulation_trajectory> trajectories{};
+                    for (int j = 0; j < simulations_per_thread; ++j) {
+                        auto trajectory = vessel.do_simulation(end_time);
+                        trajectories.push_back(std::move(trajectory));
+                    }
+                    return trajectories;
+                });
+
+                futures.push_back(std::move(future));
+            }
+
+//            for (int i = 0; i < simulations_to_run; ++i) {
+//                auto future = std::async(std::launch::async, &vessel_t::do_simulation, this, end_time, EMPTY_SIMULATION_MONITOR);
+//                futures.push_back(std::move(future));
+////                std::packaged_task<simulation_trajectory(double_t, const std::function<void(simulation_state&)>&)> task;
+////                std::future<simulation_trajectory> future = task.get_future();
+////                std::thread thread{std::move()};
+//            }
+
+            for (auto& future: futures) {
+                auto trajectories = future.get();
+                for (auto& t: trajectories) {
+                    result.push_back(std::move(t));
+                }
+            }
+
+
+            return result;
         }
 
         friend std::ostream& operator<<(std::ostream& s, const vessel_t& vessel);

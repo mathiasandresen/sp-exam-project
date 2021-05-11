@@ -149,6 +149,30 @@ vessel_t circadian_oscillator2()
     return v;
 }
 
+class hospitalized_monitor: public simulation_monitor {
+private:
+    double_t hospitalized_acc{0.0};
+    double_t last_time{0.0};
+public:
+    size_t max_hospitalized{0};
+
+    void monitor(simulation_state &state) override {
+        auto currently_hospitalized = state.reactants.get("H").amount;
+
+        if (currently_hospitalized > max_hospitalized) {
+            max_hospitalized = currently_hospitalized;
+        }
+
+        hospitalized_acc += (currently_hospitalized * (state.time - last_time));
+
+        last_time = state.time;
+    }
+
+    double_t get_mean_hospitalized() const {
+        return (hospitalized_acc / last_time);
+    }
+};
+
 void simulate_covid() {
     std::cout << "Simulating covid19 example" << std::endl;
     vessel_t covid_vessel = seihr(10000);
@@ -157,23 +181,32 @@ void simulate_covid() {
 
     covid_vessel.visualize_reactions();
 
-    std::ofstream csv_file;
-    csv_file.open("covid_output.csv");
+    hospitalized_monitor monitor{};
 
-    auto state = covid_vessel.getState();
-    for (auto& reactant : state.getMap()) {
-        csv_file << reactant.second->name << ",";
+    auto trajectory = covid_vessel.do_simulation(400, monitor);
+    trajectory.write_csv("covid_output.csv");
+
+    std::cout << "Max hospitalized: " << monitor.max_hospitalized << std::endl;
+    std::cout << "Mean hospitalized: " << monitor.get_mean_hospitalized() << std::endl;
+
+    return;
+
+
+    auto trajectories = covid_vessel.do_multiple_simulations(400, 2);
+
+    std::cout << "simulations done" << std::endl << "computing mean" << std::endl;
+
+    auto mean = simulation_trajectory::compute_mean_trajectory(trajectories);
+    mean.write_csv("covid_output.csv");
+
+    auto i{0};
+    for (auto& trajectory: trajectories) {
+        trajectory.write_csv("covid_output_" + std::to_string(i) + ".csv");
+        i++;
     }
-    csv_file << "time" << std::endl;
 
-    covid_vessel.do_simulation(400, [&csv_file](double_t time, symbol_table<std::shared_ptr<reactant>> reactants, const std::vector<reaction>& reactions){
-        for (auto& reactant : reactants.getMap()) {
-            csv_file << reactant.second->amount << ",";
-        }
-        csv_file << time << std::endl;
-    });
 
-    csv_file.close();
+
 }
 
 void simulate_introduction() {
@@ -184,79 +217,44 @@ void simulate_introduction() {
 
     introduction_vessel.visualize_reactions();
 
-    std::ofstream csv_file;
-    csv_file.open("intro_output.csv");
+    auto trajectories = introduction_vessel.do_multiple_simulations(80, 50);
 
-    auto state = introduction_vessel.getState();
-    for (auto& reactant : state.getMap()) {
-        csv_file << reactant.second->name << ",";
-    }
-    csv_file << "time" << std::endl;
+//    auto trajectory = introduction_vessel.do_simulation(80);
 
-    introduction_vessel.do_simulation(80, [&csv_file](double_t time, symbol_table<std::shared_ptr<reactant>> reactants, auto reactions){
-        for (auto& reactant : reactants.getMap()) {
-            csv_file << reactant.second->amount << ",";
-        }
-        csv_file << time << std::endl;
+    auto trajectory = simulation_trajectory::compute_mean_trajectory(trajectories);
 
-    });
-
-    csv_file.close();
+    trajectory.write_csv("intro_output.csv");
 }
 
 
 void simulate_circadian() {
-    std::cout << "Simulating circadian rhythm example" << std::endl;
-    vessel_t oscillator = circadian_oscillator();
+    std::cout << "Simulating circadian rhythm example..." << std::endl;
+    vessel_t oscillator = circadian_oscillator2();
 
     std::cout << oscillator << std::endl;
 
     oscillator.visualize_reactions();
 
-    std::ofstream csv_file;
-    csv_file.open("circadian_output.csv");
+    auto trajectories = oscillator.do_multiple_simulations(100, 2);
 
-    auto state = oscillator.getState();
-    for (auto& reactant : state.getMap()) {
-        csv_file << reactant.second->name << ",";
-    }
-    csv_file << "time" << std::endl;
+//    auto trajectory = oscillator.do_simulation(100);
 
-    double_t last_time = -1;
+    std::cout << "Done simulating, starting calculating mean..." << std::endl;
+    auto trajectory = simulation_trajectory::compute_mean_trajectory(trajectories);
 
-    oscillator.do_simulation(200, [&csv_file, &last_time](double_t time, symbol_table<std::shared_ptr<reactant>> reactants, auto reactions){
-        if (time - last_time > 0.25) {
-            last_time = time;
-            for (auto& reactant : reactants.getMap()) {
-                csv_file << reactant.second->amount << ",";
-            }
-            csv_file << time << std::endl;
-        }
-    });
+    std::cout << "Writing csv file..." << std::endl;
+    trajectory.write_csv("circadian_output.csv");
 
-    csv_file.close();
+    std::cout << "Done!" << std::endl;
+
 }
 
 int main() {
-    simulate_covid();
+//    simulate_covid();
 
 //    simulate_introduction();
 
-//    simulate_circadian();
-
-//    std::exponential_distribution<double_t> rng{1};
-//    std::default_random_engine engine;
-//
-//    auto acc = 0.0;
-//
-//    for (int i = 0; i < 10000; ++i) {
-//        auto num = rng(engine);
-//        acc += num;
-////        std::cout << num << std::endl;
-//    }
-//
-//    std::cout << "Average: " << (acc / 10000) << std::endl;
-
+    simulate_circadian();
 }
 
 
