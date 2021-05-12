@@ -22,33 +22,66 @@
 #include "symbol_table.h"
 #include "simulation_monitor.h"
 #include "data.h"
+#include "../include/thread-pool.hpp"
 
 namespace StochasticSimulation {
 
-    class simulation_trajectory: public std::map<double_t, simulation_state> {
+    using map_type = std::map<double_t, std::shared_ptr<simulation_state>>;
+    class simulation_trajectory: public map_type {
     private:
         double_t largest_time{-1};
-        static double_t compute_interpolated_value(const std::string& key, std::shared_ptr<simulation_state> s0, std::shared_ptr<simulation_state> s1, double_t x);
+        static double_t compute_interpolated_value(
+                const std::string& key,
+                simulation_state& s0,
+                simulation_state& s1,
+                double_t x);
     public:
-        using std::map<double_t, simulation_state>::map;
+        using map_type::map;
 
-        simulation_trajectory(const simulation_trajectory&) = default;
-        simulation_trajectory(simulation_trajectory&&) = default;
+        simulation_trajectory(const simulation_trajectory& val): map_type(val) {
+            std::cout << "copy constructor" << std::endl;
 
-        static simulation_trajectory compute_mean_trajectory(std::vector<simulation_trajectory> trajectories);
+            largest_time = val.largest_time;
+        }
 
-        void insert(simulation_state state) {
-            if (state.time > largest_time) {
-                largest_time = state.time;
+        simulation_trajectory(simulation_trajectory&& rval): map_type(std::move(rval)) {
+            std::cout << "move constructor" << std::endl;
+
+            largest_time = std::move(rval.largest_time);
+        };
+
+        simulation_trajectory& operator=(const simulation_trajectory & val) {
+            std::cout << "copy operator" << std::endl;
+            map_type::operator=(val);
+            largest_time = val.largest_time;
+        };
+
+        simulation_trajectory& operator=(simulation_trajectory&& rval) {
+            std::cout << "move operator" << std::endl;
+            map_type::operator=(std::move(rval));
+            largest_time = std::move(rval.largest_time);
+            return *this;
+        };
+
+        static simulation_trajectory compute_mean_trajectory(std::vector<std::shared_ptr<simulation_trajectory>>& trajectories);
+
+        void insert(std::shared_ptr<simulation_state> state) {
+            if (state->time > largest_time) {
+                largest_time = state->time;
             }
-            insert_or_assign(state.time, std::move(state));
+
+            if (contains(state->time)) {
+                std::cout << "already contains time" << std::endl;
+            }
+
+            insert_or_assign(state->time, std::move(state));
         }
 
         void write_csv(const std::string& path) {
             std::ofstream csv_file;
             csv_file.open(path);
 
-            auto reactants = begin()->second.reactants;
+            auto reactants = at(0)->reactants;
 
             for (auto& reactant : reactants) {
                 csv_file << reactant.second.name << ",";
@@ -57,9 +90,9 @@ namespace StochasticSimulation {
 
             for (auto& state : *this) {
                 for (auto& reactant: reactants) {
-                    csv_file << state.second.reactants.get(reactant.second.name).amount << ",";
+                    csv_file << state.second->reactants.get(reactant.second.name).amount << ",";
                 }
-                csv_file << state.second.time << std::endl;
+                csv_file << state.second->time << std::endl;
             }
 
             csv_file.close();
@@ -180,20 +213,31 @@ namespace StochasticSimulation {
         }
 
 
-        simulation_trajectory do_simulation(double_t end_time, simulation_monitor& monitor) {
+        std::shared_ptr<simulation_trajectory> do_simulation(double_t end_time, simulation_monitor& monitor = EMPTY_SIMULATION_MONITOR) {
+            auto thread_id = std::this_thread::get_id();
+            std::cout << "Beginning simulation (thread " << thread_id << ")" << std::endl;
+
             simulation_trajectory trajectory{};
 
             double_t t{0};
             std::default_random_engine engine{};
             auto epoch = std::chrono::system_clock::now().time_since_epoch().count();
-            engine.seed(epoch);
+            engine.seed(epoch * (std::hash<std::thread::id>{}(thread_id)));
 
-            simulation_state initial_state{reactants, t};
-            trajectory.insert(std::move(initial_state));
+            // Insert initial state
+            try {
+                 trajectory.insert(std::make_shared<simulation_state>(simulation_state{reactants, t}));
+            } catch (const std::exception& exception) {
+                std::cout << exception.what() << std::endl;
+            }
 
             while (t <= end_time) {
                 for (reaction& reaction: reactions) {
-                    reaction.compute_delay(trajectory.at(t), engine);
+                    try {
+                        reaction.compute_delay(*trajectory.at(t), engine);
+                    } catch (const std::exception& exception) {
+                        std::cout << exception.what() << std::endl;
+                    }
                 }
 
                 auto r = reactions.front();
@@ -214,11 +258,15 @@ namespace StochasticSimulation {
                     break;
                 }
 
-                auto last_state = trajectory.at(t);
+                auto& last_state = trajectory.at(t);
+
+                if (last_state->reactants.getMap().size() == 0) {
+                    std::cout << "what?" << std::endl;
+                }
 
                 t += r.delay;
 
-                simulation_state state{last_state.reactants, t};
+                simulation_state state{last_state->reactants, t};
 
                 if (
                     std::all_of(r.basicReaction.from.begin(), r.basicReaction.from.end(), [&state](reactant& e){return state.reactants.get(e.name).amount >= e.required;}) &&
@@ -235,56 +283,49 @@ namespace StochasticSimulation {
                     }
                 }
 
-                trajectory.insert(std::move(state));
-
-                monitor.monitor(trajectory.at(t));
-            }
-
-            return trajectory;
-        }
-
-        simulation_trajectory do_simulation(double_t end_time) {
-            return do_simulation(end_time, EMPTY_SIMULATION_MONITOR);
-        }
-
-        std::vector<simulation_trajectory> do_multiple_simulations(double_t end_time, size_t simulations_to_run) {
-            //TODO: only doing 48 when set to 50 - this is because of the simulations_per_thread calculation
-            //TODO: exception when doing circadian
-            auto result = std::vector<simulation_trajectory>{};
-            auto futures = std::vector<std::future<std::vector<simulation_trajectory>>>{};
-
-            auto cores = std::thread::hardware_concurrency();
-            auto amount_of_threads = std::min(cores, simulations_to_run);
-            auto simulations_per_thread = simulations_to_run / amount_of_threads;
-
-            for (int i = 1; i <= amount_of_threads; i++ ) {
-                std::future<std::vector<simulation_trajectory>> future = std::async(std::launch::async, [&vessel = *this, &end_time, &simulations_per_thread](){
-                    std::vector<simulation_trajectory> trajectories{};
-                    for (int j = 0; j < simulations_per_thread; ++j) {
-                        auto trajectory = vessel.do_simulation(end_time);
-                        trajectories.push_back(std::move(trajectory));
-                    }
-                    return trajectories;
-                });
-
-                futures.push_back(std::move(future));
-            }
-
-//            for (int i = 0; i < simulations_to_run; ++i) {
-//                auto future = std::async(std::launch::async, &vessel_t::do_simulation, this, end_time, EMPTY_SIMULATION_MONITOR);
-//                futures.push_back(std::move(future));
-////                std::packaged_task<simulation_trajectory(double_t, const std::function<void(simulation_state&)>&)> task;
-////                std::future<simulation_trajectory> future = task.get_future();
-////                std::thread thread{std::move()};
-//            }
-
-            for (auto& future: futures) {
-                auto trajectories = future.get();
-                for (auto& t: trajectories) {
-                    result.push_back(std::move(t));
+                try {
+                    trajectory.insert(std::make_shared<simulation_state>(state));
+                } catch (const std::exception& exception) {
+                    std::cout << " tried to insert " << state << std::endl;
+                    std::cout << exception.what() << std::endl;
                 }
+
+                monitor.monitor(*trajectory.at(t));
             }
 
+            try {
+                return std::make_shared<simulation_trajectory>(std::move(trajectory));
+            } catch (const std::exception& exception) {
+                std::cout << exception.what() << std::endl;
+            }
+        }
+
+        std::vector<std::shared_ptr<simulation_trajectory>> do_multiple_simulations(double_t end_time, size_t simulations_to_run) {
+            //TODO: exception when doing circadian
+            auto futures = std::vector<std::future<simulation_trajectory>>{};
+
+            auto pool = thread_pool();
+
+            for (int i = 0; i < simulations_to_run; ++i) {
+                futures.push_back(pool.async([&vessel = *this](double_t end_time){
+                    auto result = vessel.do_simulation(end_time);
+                    std::cout << "finished simulation" << std::endl;
+                    return std::move(*result);
+                }, end_time));
+
+            }
+
+            std::vector<std::shared_ptr<simulation_trajectory>> result{};
+            result.reserve(futures.size());
+
+                for (auto& fut: futures) {
+                    try {
+                        auto val = fut.get();
+                        result.push_back(std::make_shared<simulation_trajectory>(std::move(val)));
+                    } catch (const std::exception& exception) {
+                        std::cout << exception.what() << std::endl;
+                    }
+                }
 
             return result;
         }

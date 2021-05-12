@@ -2,6 +2,8 @@
 #include "library/simulation.h"
 #include "library/symbol_table.h"
 #include <fstream>
+#include "library/reaction.h"
+#include "library/vessel.h"
 //#include "include/matplotlibcpp.h"
 
 //namespace plt = matplotlibcpp;
@@ -183,30 +185,24 @@ void simulate_covid() {
 
     hospitalized_monitor monitor{};
 
-    auto trajectory = covid_vessel.do_simulation(400, monitor);
-    trajectory.write_csv("covid_output.csv");
+//    auto trajectory = covid_vessel.do_simulation(400, monitor);
+//    trajectory->write_csv("covid_output.csv");
 
-    std::cout << "Max hospitalized: " << monitor.max_hospitalized << std::endl;
-    std::cout << "Mean hospitalized: " << monitor.get_mean_hospitalized() << std::endl;
+//    std::cout << "Max hospitalized: " << monitor.max_hospitalized << std::endl;
+//    std::cout << "Mean hospitalized: " << monitor.get_mean_hospitalized() << std::endl;
+//
 
-    return;
 
+    auto trajectories = covid_vessel.do_multiple_simulations(400, 3);
 
-    auto trajectories = covid_vessel.do_multiple_simulations(400, 2);
+//    for (auto& t: trajectories) {
+//        t.write_csv("covid_output.csv");
+//    }
 
     std::cout << "simulations done" << std::endl << "computing mean" << std::endl;
 
-    auto mean = simulation_trajectory::compute_mean_trajectory(trajectories);
-    mean.write_csv("covid_output.csv");
-
-    auto i{0};
-    for (auto& trajectory: trajectories) {
-        trajectory.write_csv("covid_output_" + std::to_string(i) + ".csv");
-        i++;
-    }
-
-
-
+//    auto mean = simulation_trajectory::compute_mean_trajectory(trajectories);
+//    mean.write_csv("covid_output.csv");
 }
 
 void simulate_introduction() {
@@ -221,9 +217,9 @@ void simulate_introduction() {
 
 //    auto trajectory = introduction_vessel.do_simulation(80);
 
-    auto trajectory = simulation_trajectory::compute_mean_trajectory(trajectories);
+//    auto trajectory = simulation_trajectory::compute_mean_trajectory(trajectories);
 
-    trajectory.write_csv("intro_output.csv");
+//    trajectory.write_csv("intro_output.csv");
 }
 
 
@@ -235,12 +231,13 @@ void simulate_circadian() {
 
     oscillator.visualize_reactions();
 
-    auto trajectories = oscillator.do_multiple_simulations(100, 2);
+    auto trajectories = oscillator.do_multiple_simulations(110, 5);
 
-//    auto trajectory = oscillator.do_simulation(100);
-
-    std::cout << "Done simulating, starting calculating mean..." << std::endl;
+    std::cout << "Done simulating" << std::endl;
+    std::cout << "Calculating mean trajectory of " << trajectories.size() << " trajectories" << std::endl;
     auto trajectory = simulation_trajectory::compute_mean_trajectory(trajectories);
+
+//    auto trajectory = oscillator.do_simulation(110);
 
     std::cout << "Writing csv file..." << std::endl;
     trajectory.write_csv("circadian_output.csv");

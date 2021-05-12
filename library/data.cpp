@@ -5,6 +5,8 @@
 #include <iostream>
 #include <utility>
 #include "simulation.h"
+#include "data.h"
+
 
 namespace StochasticSimulation {
     basic_reaction reactant::operator>>=(StochasticSimulation::reactant other) {
@@ -69,5 +71,17 @@ namespace StochasticSimulation {
         } else {
             delay = -1;
         }
+    }
+
+    std::ostream &operator<<(std::ostream &s, const simulation_state& state) {
+        s << "{" << std::endl
+            << "time: " << state.time << "," << std::endl
+            << "reactants: {" << std::endl;
+        for(auto& pair: state.reactants) {
+            s << pair.first << ": " << pair.second.amount << "," << std::endl;
+        }
+
+        s << "}";
+        return s;
     }
 }

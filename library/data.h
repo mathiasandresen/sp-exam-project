@@ -92,10 +92,18 @@ namespace StochasticSimulation {
             time{time}
         {};
 
+        simulation_state(const simulation_state&) = default;
+        simulation_state(simulation_state&&) = default;
+
+        simulation_state& operator=(const simulation_state &) = default;
+        simulation_state& operator=(simulation_state&&) = default;
+
 //        simulation_state(const simulation_state&) = default;
-////        simulation_state& operator=(const simulation_state&) = default;
+//        simulation_state& operator=(const simulation_state&) = default;
 //
-//        ~simulation_state() = default;
+        ~simulation_state() = default;
+
+        friend std::ostream &operator<<(std::ostream &, const simulation_state &);
     };
 
 }
