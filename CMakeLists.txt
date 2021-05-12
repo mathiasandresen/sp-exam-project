@@ -13,9 +13,11 @@ add_library(
     stochastic-simulation
     library/simulation.cpp
     library/simulation.cpp
-        library/SymbolTable.h
+    library/SymbolTable.h
     library/simulation_monitor.h
-    library/data.h library/data.cpp library/reaction.h library/vessel.h library/reaction.cpp library/vessel.cpp)
+    library/data.h
+    library/data.cpp
+)
 
 #add_library(
 #    matplotlib_cpp
@@ -28,7 +30,7 @@ find_package(PythonLibs 3.8.7 COMPONENTS NumPy)
 
 find_package(PythonLibs 3.8.7 COMPONENTS NumPy)
 
-add_executable(sp_exam_project main.cpp ${PYTHON_INCLUDE_DIRS} include/matplotlibcpp.h include/thread-pool.hpp)
+add_executable(sp_exam_project main.cpp ${PYTHON_INCLUDE_DIRS} include/matplotlibcpp.h include/thread-pool.hpp vessels.h)
 
 target_include_directories(sp_exam_project PRIVATE ${PYTHON_INCLUDE_DIRS} include)
 
