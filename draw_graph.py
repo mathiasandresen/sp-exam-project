@@ -37,7 +37,7 @@ def intro_graph():
 
 
 def cir_graph():
-    CSV_FILE_PATH = f"cmake-build-{MODE}/circadian_output.csv"
+    CSV_FILE_PATH = f"cmake-build-{MODE}/circadian_output2.csv"
 
     data = pd.read_csv(CSV_FILE_PATH)
 

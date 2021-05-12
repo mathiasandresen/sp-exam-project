@@ -7,7 +7,7 @@
 
 namespace StochasticSimulation {
     class simulation_state;
-    struct basic_reaction;
+    struct Reaction;
     class reactant_collection;
 
     struct reactant {
@@ -33,11 +33,13 @@ namespace StochasticSimulation {
 
         ~reactant() = default;
 
-        basic_reaction operator>>=(reactant other);
+        Reaction operator>>=(reactant other);
 
-        basic_reaction operator>>=(reactant_collection other);
+        Reaction operator>>=(reactant_collection other);
 
-        reactant_collection operator+(reactant other);
+        reactant_collection operator+(const reactant& other);
+
+        bool operator<(reactant other) const;
 
         reactant operator*(size_t req) {
             required = req;
@@ -46,40 +48,45 @@ namespace StochasticSimulation {
 
     };
 
-    class reactant_collection: public std::vector<reactant> {
+    class reactant_collection: public std::set<reactant> {
     public:
-        using std::vector<reactant>::vector;
-        basic_reaction operator>>=(reactant other);
-        basic_reaction operator>>=(reactant_collection other);
+        using std::set<reactant>::set;
+        Reaction operator>>=(reactant other);
+        Reaction operator>>=(reactant_collection other);
     };
 
-    struct basic_reaction {
-        reactant_collection from;
-        reactant_collection to;
-    };
-
-    class reaction {
+    class Reaction {
     public:
-        basic_reaction basicReaction;
+        std::set<reactant> from;
+        std::set<reactant> to;
         std::optional<std::vector<reactant>> catalysts;
         double_t rate{};
         double_t delay{-1};
+        std::shared_ptr<simulation_state> lastDelayState;
 
-        reaction(basic_reaction basicReaction, std::initializer_list<reactant> catalysts, double rate):
-                basicReaction(std::move(basicReaction)),
+        Reaction(std::set<reactant> from, std::set<reactant> to):
+                from(from),
+                to(to)
+        {}
+
+        Reaction(std::set<reactant> from, std::set<reactant> to, std::initializer_list<reactant> catalysts, double rate):
+                from(from),
+                to(to),
                 catalysts(catalysts),
                 rate(rate)
         {}
 
-        reaction(basic_reaction basicReaction, double rate):
-                basicReaction(std::move(basicReaction)),
+        Reaction(std::set<reactant> from, std::set<reactant> to, double rate):
+                from(from),
+                to(to),
                 catalysts{},
                 rate(rate)
         {}
 
         void compute_delay(simulation_state& state, std::default_random_engine& engine);
+        void compute_delay2(simulation_state& state, std::default_random_engine& engine);
 
-        friend std::ostream &operator<<(std::ostream &s, const reaction &reaction);
+        friend std::ostream &operator<<(std::ostream &s, const Reaction &reaction);
     };
 
     struct simulation_state {

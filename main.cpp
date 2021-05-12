@@ -4,6 +4,8 @@
 #include <fstream>
 #include "library/reaction.h"
 #include "library/vessel.h"
+#include <chrono>
+
 //#include "include/matplotlibcpp.h"
 
 //namespace plt = matplotlibcpp;
@@ -231,16 +233,25 @@ void simulate_circadian() {
 
     oscillator.visualize_reactions();
 
-    auto trajectories = oscillator.do_multiple_simulations(110, 5);
+//    auto trajectories = oscillator.do_multiple_simulations(110, 5);
+//    std::cout << "Done simulating" << std::endl;
+//    std::cout << "Calculating mean trajectory of " << trajectories.size() << " trajectories" << std::endl;
+//    auto trajectory = simulation_trajectory::compute_mean_trajectory(trajectories);
 
-    std::cout << "Done simulating" << std::endl;
-    std::cout << "Calculating mean trajectory of " << trajectories.size() << " trajectories" << std::endl;
-    auto trajectory = simulation_trajectory::compute_mean_trajectory(trajectories);
 
-//    auto trajectory = oscillator.do_simulation(110);
+    auto t0 = std::chrono::high_resolution_clock::now();
+    auto trajectory = oscillator.do_simulation(110);
+    auto t1 = std::chrono::high_resolution_clock::now();
+    auto trajectory2 = oscillator.do_simulation2(110);
+    auto t2 = std::chrono::high_resolution_clock::now();
+
+    std::cout << "Simulation 1 took: " << std::chrono::duration_cast<std::chrono::nanoseconds>(t1-t0).count() << std::endl;
+    std::cout << "Simulation 2 took: " << std::chrono::duration_cast<std::chrono::nanoseconds>(t2-t1).count() << std::endl;
+
 
     std::cout << "Writing csv file..." << std::endl;
-    trajectory.write_csv("circadian_output.csv");
+    trajectory->write_csv("circadian_output.csv");
+    trajectory2->write_csv("circadian_output2.csv");
 
     std::cout << "Done!" << std::endl;
 

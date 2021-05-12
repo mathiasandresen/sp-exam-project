@@ -8,6 +8,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <set>
 #include <optional>
 #include <map>
 #include <numeric>
@@ -19,6 +20,7 @@
 #include <chrono>
 #include <thread>
 #include <future>
+#include <ranges>
 #include "symbol_table.h"
 #include "simulation_monitor.h"
 #include "data.h"
@@ -105,7 +107,7 @@ namespace StochasticSimulation {
 
     class vessel_t {
     private:
-        std::vector<reaction> reactions{};
+        std::vector<Reaction> reactions{};
         symbol_table<reactant> reactants;
     public:
 //        simulation_trajectory trajectory{};
@@ -118,32 +120,34 @@ namespace StochasticSimulation {
             return newReactant;
         }
 
-        reaction operator()(basic_reaction basicReaction, std::initializer_list<reactant> catalysts, double rate) {
-            reaction newReaction{std::move(basicReaction), catalysts, rate};
+        Reaction operator()(Reaction&& reaction, double_t rate) {
+            reaction.rate = rate;
 
-            // Add to vessel reactions
-            reactions.push_back(newReaction);
+            reactions.push_back(reaction);
 
-            return newReaction;
+            return reaction;
         }
 
-        reaction operator()(basic_reaction basicReaction, reactant catalyst, double_t rate) {
-            reaction newReaction{std::move(basicReaction), {std::move(catalyst)}, rate};
+        Reaction operator()(Reaction&& reaction, std::initializer_list<reactant> catalysts, double rate) {
+            reaction.rate = rate;
+            reaction.catalysts = catalysts;
 
             // Add to vessel reactions
-            reactions.push_back(newReaction);
+            reactions.push_back(reaction);
 
-            return newReaction;
+            return reaction;
         }
 
-        reaction operator()(basic_reaction basicReaction, double rate) {
-            reaction newReaction{std::move(basicReaction), rate};
+        Reaction operator()(Reaction&& reaction, reactant catalyst, double_t rate) {
+            reaction.rate = rate;
+            reaction.catalysts = {catalyst};
 
             // Add to vessel reactions
-            reactions.push_back(newReaction);
+            reactions.push_back(reaction);
 
-            return newReaction;
+            return reaction;
         }
+
 
         reactant environment() {
             if (reactants.contains("__env__")) {
@@ -184,12 +188,12 @@ namespace StochasticSimulation {
                         str << node_map.get(catalyst.name) << " -> " << reaction_node << " [arrowhead=\"tee\"];" << std::endl;
                     }
                 }
-                for (auto& reactant: reaction.basicReaction.from) {
+                for (auto& reactant: reaction.from) {
                     if (reactant.name != "__env__") {
                         str << node_map.get(reactant.name) << " -> " << reaction_node << ";" << std::endl;
                     }
                 }
-                for (auto& product: reaction.basicReaction.to) {
+                for (auto& product: reaction.to) {
                     if (product.name != "__env__") {
                         str << reaction_node << " -> " << node_map.get(product.name) << ";" << std::endl;
                     }
@@ -212,6 +216,99 @@ namespace StochasticSimulation {
             return reactants;
         }
 
+        std::shared_ptr<simulation_trajectory> do_simulation2(double_t end_time, simulation_monitor& monitor = EMPTY_SIMULATION_MONITOR) {
+            auto thread_id = std::this_thread::get_id();
+            std::cout << "Beginning simulation2 (thread " << thread_id << ")" << std::endl;
+
+            simulation_trajectory trajectory{};
+            std::set<std::string> affected_reactants{};
+
+            double_t t{0};
+            std::default_random_engine engine{};
+            auto epoch = std::chrono::system_clock::now().time_since_epoch().count();
+            engine.seed(epoch * (std::hash<std::thread::id>{}(thread_id)));
+
+            // Insert initial state
+            try {
+                trajectory.insert(std::make_shared<simulation_state>(simulation_state{reactants, t}));
+            } catch (const std::exception& exception) {
+                std::cout << exception.what() << std::endl;
+            }
+
+            while (t <= end_time) {
+                for (Reaction& reaction: reactions) {
+                    try {
+                        // New: using new compute delay function
+                        reaction.compute_delay2(*trajectory.at(t), engine);
+                    } catch (const std::exception& exception) {
+                        std::cout << exception.what() << std::endl;
+                    }
+                }
+
+                auto r = reactions.front();
+
+                // Select Reaction with min delay which is not -1
+                for (auto& reaction: reactions) {
+                    if (reaction.delay == -1) {
+                        continue;
+                    } else if (reaction.delay < r.delay) {
+                        r = reaction;
+                    } else if (r.delay == -1 && reaction.delay != -1) {
+                        r = reaction;
+                    }
+                }
+
+                // Stop if we have no reactions to do, thus r.delay == -1
+                if (r.delay == -1) {
+                    break;
+                }
+
+                auto& last_state = trajectory.at(t);
+
+                if (last_state->reactants.getMap().size() == 0) {
+                    std::cout << "what?" << std::endl;
+                }
+
+                t += r.delay;
+
+                simulation_state state{last_state->reactants, t};
+
+                affected_reactants.clear();
+
+                if (
+                        std::all_of(r.from.begin(), r.from.end(), [&state](reactant e){return state.reactants.get(e.name).amount >= e.required;}) &&
+                        (
+                                !r.catalysts.has_value() ||
+                                std::all_of(r.catalysts.value().begin(), r.catalysts.value().end(), [&state](reactant e){return state.reactants.get(e.name).amount >= e.required;})
+                        )
+                        ) {
+                    for (auto& reactant: r.from) {
+                        state.reactants.get(reactant.name).amount -= reactant.required;
+                        affected_reactants.insert(reactant.name);
+                    }
+                    for (auto& reactant: r.to) {
+                        state.reactants.get(reactant.name).amount += reactant.required;
+                        affected_reactants.insert(reactant.name);
+                    }
+                }
+
+                try {
+                    trajectory.insert(std::make_shared<simulation_state>(state));
+                } catch (const std::exception& exception) {
+                    std::cout << " tried to insert " << state << std::endl;
+                    std::cout << exception.what() << std::endl;
+                }
+
+                monitor.monitor(*trajectory.at(t));
+            }
+
+            try {
+                return std::make_shared<simulation_trajectory>(std::move(trajectory));
+            } catch (const std::exception& exception) {
+                std::cout << exception.what() << std::endl;
+            }
+
+        }
 
         std::shared_ptr<simulation_trajectory> do_simulation(double_t end_time, simulation_monitor& monitor = EMPTY_SIMULATION_MONITOR) {
             auto thread_id = std::this_thread::get_id();
@@ -232,7 +329,7 @@ namespace StochasticSimulation {
             }
 
             while (t <= end_time) {
-                for (reaction& reaction: reactions) {
+                for (Reaction& reaction: reactions) {
                     try {
                         reaction.compute_delay(*trajectory.at(t), engine);
                     } catch (const std::exception& exception) {
@@ -242,7 +339,7 @@ namespace StochasticSimulation {
 
                 auto r = reactions.front();
 
-                // Select reaction with min delay which is not -1
+                // Select Reaction with min delay which is not -1
                 for (auto& reaction: reactions) {
                     if (reaction.delay == -1) {
                         continue;
@@ -269,16 +366,16 @@ namespace StochasticSimulation {
                 simulation_state state{last_state->reactants, t};
 
                 if (
-                    std::all_of(r.basicReaction.from.begin(), r.basicReaction.from.end(), [&state](reactant& e){return state.reactants.get(e.name).amount >= e.required;}) &&
+                    std::all_of(r.from.begin(), r.from.end(), [&state](const reactant& e){return state.reactants.get(e.name).amount >= e.required;}) &&
                     (
                         !r.catalysts.has_value() ||
-                        std::all_of(r.catalysts.value().begin(), r.catalysts.value().end(), [&state](reactant& e){return state.reactants.get(e.name).amount >= e.required;})
+                        std::all_of(r.catalysts.value().begin(), r.catalysts.value().end(), [&state](const reactant& e){return state.reactants.get(e.name).amount >= e.required;})
                     )
                 ) {
-                    for (auto& reactant: r.basicReaction.from) {
+                    for (auto& reactant: r.from) {
                         state.reactants.get(reactant.name).amount -= reactant.required;
                     }
-                    for (auto& reactant: r.basicReaction.to) {
+                    for (auto& reactant: r.to) {
                         state.reactants.get(reactant.name).amount += reactant.required;
                     }
                 }
