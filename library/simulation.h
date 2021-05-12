@@ -108,12 +108,12 @@ namespace StochasticSimulation {
     class vessel_t {
     private:
         std::vector<Reaction> reactions{};
-        symbol_table<reactant> reactants;
+        symbol_table<Reactant> reactants;
     public:
 //        simulation_trajectory trajectory{};
 
-        reactant operator()(std::string name, size_t initial_amount) {
-            reactant newReactant{std::move(name), initial_amount};
+        Reactant operator()(std::string name, size_t initial_amount) {
+            Reactant newReactant{std::move(name), initial_amount};
 
             reactants.put(newReactant.name, newReactant);
 
@@ -128,7 +128,7 @@ namespace StochasticSimulation {
             return reaction;
         }
 
-        Reaction operator()(Reaction&& reaction, std::initializer_list<reactant> catalysts, double rate) {
+        Reaction operator()(Reaction&& reaction, std::initializer_list<Reactant> catalysts, double rate) {
             reaction.rate = rate;
             reaction.catalysts = catalysts;
 
@@ -138,7 +138,7 @@ namespace StochasticSimulation {
             return reaction;
         }
 
-        Reaction operator()(Reaction&& reaction, reactant catalyst, double_t rate) {
+        Reaction operator()(Reaction&& reaction, Reactant catalyst, double_t rate) {
             reaction.rate = rate;
             reaction.catalysts = {catalyst};
 
@@ -149,12 +149,12 @@ namespace StochasticSimulation {
         }
 
 
-        reactant environment() {
+        Reactant environment() {
             if (reactants.contains("__env__")) {
                return reactants.get("__env__");
             }
 
-            std::shared_ptr<reactant> newReactant(new reactant("__env__", 0, 0));
+            std::shared_ptr<Reactant> newReactant(new Reactant("__env__", 0, 0));
 
             reactants.put(newReactant->name, *newReactant);
 
@@ -212,7 +212,7 @@ namespace StochasticSimulation {
             system("dot -Tpng -o graph.png graph.dot");
         }
 
-        symbol_table<reactant> get_reactants() {
+        symbol_table<Reactant> get_reactants() {
             return reactants;
         }
 
@@ -276,10 +276,10 @@ namespace StochasticSimulation {
                 affected_reactants.clear();
 
                 if (
-                        std::all_of(r.from.begin(), r.from.end(), [&state](reactant e){return state.reactants.get(e.name).amount >= e.required;}) &&
+                        std::all_of(r.from.begin(), r.from.end(), [&state](Reactant e){return state.reactants.get(e.name).amount >= e.required;}) &&
                         (
                                 !r.catalysts.has_value() ||
-                                std::all_of(r.catalysts.value().begin(), r.catalysts.value().end(), [&state](reactant e){return state.reactants.get(e.name).amount >= e.required;})
+                                std::all_of(r.catalysts.value().begin(), r.catalysts.value().end(), [&state](Reactant e){return state.reactants.get(e.name).amount >= e.required;})
                         )
                         ) {
                     for (auto& reactant: r.from) {
@@ -366,10 +366,10 @@ namespace StochasticSimulation {
                 simulation_state state{last_state->reactants, t};
 
                 if (
-                    std::all_of(r.from.begin(), r.from.end(), [&state](const reactant& e){return state.reactants.get(e.name).amount >= e.required;}) &&
-                    (
+                        std::all_of(r.from.begin(), r.from.end(), [&state](const Reactant& e){return state.reactants.get(e.name).amount >= e.required;}) &&
+                        (
                         !r.catalysts.has_value() ||
-                        std::all_of(r.catalysts.value().begin(), r.catalysts.value().end(), [&state](const reactant& e){return state.reactants.get(e.name).amount >= e.required;})
+                        std::all_of(r.catalysts.value().begin(), r.catalysts.value().end(), [&state](const Reactant& e){return state.reactants.get(e.name).amount >= e.required;})
                     )
                 ) {
                     for (auto& reactant: r.from) {

@@ -10,73 +10,73 @@ namespace StochasticSimulation {
     struct Reaction;
     class reactant_collection;
 
-    struct reactant {
+    struct Reactant {
         std::string name;
         double_t amount; //TODO: should properly be fixed
         size_t required{1}; //TODO: This should properly be changed
 
-        reactant(std::string name, size_t initial_amount):
+        Reactant(std::string name, size_t initial_amount):
                 name(std::move(name)),
                 amount(initial_amount)
         {}
 
-        reactant(std::string name, double_t initial_amount):
+        Reactant(std::string name, double_t initial_amount):
                 name(std::move(name)),
                 amount(initial_amount)
         {}
 
-        reactant(std::string name, size_t initial_amount, size_t required):
+        Reactant(std::string name, size_t initial_amount, size_t required):
                 name(std::move(name)),
                 amount(initial_amount),
                 required(required)
         {}
 
-        ~reactant() = default;
+        ~Reactant() = default;
 
-        Reaction operator>>=(reactant other);
+        Reaction operator>>=(Reactant other);
 
         Reaction operator>>=(reactant_collection other);
 
-        reactant_collection operator+(const reactant& other);
+        reactant_collection operator+(const Reactant& other);
 
-        bool operator<(reactant other) const;
+        bool operator<(Reactant other) const;
 
-        reactant operator*(size_t req) {
+        Reactant operator*(size_t req) {
             required = req;
             return *this;
         }
 
     };
 
-    class reactant_collection: public std::set<reactant> {
+    class reactant_collection: public std::set<Reactant> {
     public:
-        using std::set<reactant>::set;
-        Reaction operator>>=(reactant other);
+        using std::set<Reactant>::set;
+        Reaction operator>>=(Reactant other);
         Reaction operator>>=(reactant_collection other);
     };
 
     class Reaction {
     public:
-        std::set<reactant> from;
-        std::set<reactant> to;
-        std::optional<std::vector<reactant>> catalysts;
+        std::set<Reactant> from;
+        std::set<Reactant> to;
+        std::optional<std::vector<Reactant>> catalysts;
         double_t rate{};
         double_t delay{-1};
         std::shared_ptr<simulation_state> lastDelayState;
 
-        Reaction(std::set<reactant> from, std::set<reactant> to):
+        Reaction(std::set<Reactant> from, std::set<Reactant> to):
                 from(from),
                 to(to)
         {}
 
-        Reaction(std::set<reactant> from, std::set<reactant> to, std::initializer_list<reactant> catalysts, double rate):
+        Reaction(std::set<Reactant> from, std::set<Reactant> to, std::initializer_list<Reactant> catalysts, double rate):
                 from(from),
                 to(to),
                 catalysts(catalysts),
                 rate(rate)
         {}
 
-        Reaction(std::set<reactant> from, std::set<reactant> to, double rate):
+        Reaction(std::set<Reactant> from, std::set<Reactant> to, double rate):
                 from(from),
                 to(to),
                 catalysts{},
@@ -91,10 +91,10 @@ namespace StochasticSimulation {
 
     struct simulation_state {
     public:
-        symbol_table<reactant> reactants;
+        symbol_table<Reactant> reactants;
         double_t time;
 
-        simulation_state(symbol_table<reactant> reactants, double_t time):
+        simulation_state(symbol_table<Reactant> reactants, double_t time):
             reactants{reactants},
             time{time}
         {};

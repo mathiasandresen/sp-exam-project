@@ -9,23 +9,23 @@
 
 
 namespace StochasticSimulation {
-    Reaction reactant::operator>>=(StochasticSimulation::reactant other) {
+    Reaction Reactant::operator>>=(StochasticSimulation::Reactant other) {
         return Reaction{{*this}, {std::move(other)}};
     }
 
-    Reaction reactant::operator>>=(reactant_collection other) {
+    Reaction Reactant::operator>>=(reactant_collection other) {
         return Reaction{{*this}, std::move(other)};
     }
 
-    reactant_collection reactant::operator+(const reactant& other) {
+    reactant_collection Reactant::operator+(const Reactant& other) {
         return reactant_collection{*this, other};
     }
 
-    bool reactant::operator<(reactant other) const {
+    bool Reactant::operator<(Reactant other) const {
         return name < other.name;
     }
 
-    Reaction reactant_collection::operator>>=(reactant other) {
+    Reaction reactant_collection::operator>>=(Reactant other) {
         return Reaction{*this, {std::move(other)}};
     }
 
@@ -58,7 +58,7 @@ namespace StochasticSimulation {
         size_t reactant_amount{1};
         size_t catalyst_amount{1};
 
-        for (const reactant& reactant: from) {
+        for (const Reactant& reactant: from) {
             auto amount = reactant.name == "__env__" ? 1 : state.reactants.get(reactant.name).amount;
             reactant_amount *= amount;
         }
@@ -89,7 +89,7 @@ namespace StochasticSimulation {
         size_t reactant_amount{1};
         size_t catalyst_amount{1};
 
-        for (const reactant& reactant: from) {
+        for (const Reactant& reactant: from) {
             auto amount = reactant.name == "__env__" ? 1 : state.reactants.get(reactant.name).amount;
             reactant_amount *= amount;
         }

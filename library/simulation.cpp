@@ -70,7 +70,7 @@ namespace StochasticSimulation {
                             auto& table = mean_trajectory.at(t)->reactants;
 
                             if (!table.contains(key)) {
-                                reactant reactant{key, 0.0};
+                                Reactant reactant{key, 0.0};
                                 table.put(key, reactant);
                             }
 
