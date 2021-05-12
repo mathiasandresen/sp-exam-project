@@ -7,14 +7,14 @@
 
 #include <vector>
 #include "reaction.h"
-#include "symbol_table.h"
+#include "SymbolTable.h"
 
 namespace Simulation {
 
     class Vessel {
     private:
         std::vector<Reaction> reactions;
-        StochasticSimulation::symbol_table<size_t> element_amounts;
+        StochasticSimulation::SymbolTable<size_t> element_amounts;
     public:
         Reactant operator()(std::string name, size_t initial_amount) {
             element_amounts.put(name, initial_amount);

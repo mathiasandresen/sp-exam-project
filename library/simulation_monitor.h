@@ -11,12 +11,12 @@
 namespace StochasticSimulation {
     class simulation_monitor {
     public:
-        virtual void monitor(simulation_state& state) = 0;
+        virtual void monitor(SimulationState& state) = 0;
     };
 
 
     class empty_simulation_monitor: public simulation_monitor {
-        void monitor(simulation_state &state) override {
+        void monitor(SimulationState &state) override {
           return;
         };
     };
@@ -25,14 +25,14 @@ namespace StochasticSimulation {
 
     class basic_simulation_monitor: public simulation_monitor {
     private:
-        const std::function<void(simulation_state&)> monitor_function;
+        const std::function<void(SimulationState&)> monitor_function;
     public:
-        basic_simulation_monitor(const std::function<void(simulation_state&)>& monitor_func):
+        basic_simulation_monitor(const std::function<void(SimulationState&)>& monitor_func):
             simulation_monitor{},
             monitor_function{monitor_func}
         {}
 
-        void monitor(simulation_state& state) override {
+        void monitor(SimulationState& state) override {
             monitor_function(state);
         }
     };

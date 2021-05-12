@@ -21,21 +21,21 @@
 #include <thread>
 #include <future>
 #include <ranges>
-#include "symbol_table.h"
+#include "SymbolTable.h"
 #include "simulation_monitor.h"
 #include "data.h"
 #include "../include/thread-pool.hpp"
 
 namespace StochasticSimulation {
 
-    using map_type = std::map<double_t, std::shared_ptr<simulation_state>>;
+    using map_type = std::map<double_t, std::shared_ptr<SimulationState>>;
     class simulation_trajectory: public map_type {
     private:
         double_t largest_time{-1};
         static double_t compute_interpolated_value(
                 const std::string& key,
-                simulation_state& s0,
-                simulation_state& s1,
+                SimulationState& s0,
+                SimulationState& s1,
                 double_t x);
     public:
         using map_type::map;
@@ -67,7 +67,7 @@ namespace StochasticSimulation {
 
         static simulation_trajectory compute_mean_trajectory(std::vector<std::shared_ptr<simulation_trajectory>>& trajectories);
 
-        void insert(std::shared_ptr<simulation_state> state) {
+        void insert(std::shared_ptr<SimulationState> state) {
             if (state->time > largest_time) {
                 largest_time = state->time;
             }
@@ -108,7 +108,7 @@ namespace StochasticSimulation {
     class vessel_t {
     private:
         std::vector<Reaction> reactions{};
-        symbol_table<Reactant> reactants;
+        SymbolTable<Reactant> reactants;
     public:
 //        simulation_trajectory trajectory{};
 
@@ -163,7 +163,7 @@ namespace StochasticSimulation {
 
         void visualize_reactions() {
             std::stringstream str;
-            symbol_table<std::string> node_map{};
+            SymbolTable<std::string> node_map{};
 
             str << "digraph {" << std::endl;
 
@@ -212,7 +212,7 @@ namespace StochasticSimulation {
             system("dot -Tpng -o graph.png graph.dot");
         }
 
-        symbol_table<Reactant> get_reactants() {
+        SymbolTable<Reactant> get_reactants() {
             return reactants;
         }
 
@@ -230,7 +230,7 @@ namespace StochasticSimulation {
 
             // Insert initial state
             try {
-                trajectory.insert(std::make_shared<simulation_state>(simulation_state{reactants, t}));
+                trajectory.insert(std::make_shared<SimulationState>(SimulationState{reactants, t}));
             } catch (const std::exception& exception) {
                 std::cout << exception.what() << std::endl;
             }
@@ -271,7 +271,7 @@ namespace StochasticSimulation {
 
                 t += r.delay;
 
-                simulation_state state{last_state->reactants, t};
+                SimulationState state{last_state->reactants, t};
 
                 affected_reactants.clear();
 
@@ -293,7 +293,7 @@ namespace StochasticSimulation {
                 }
 
                 try {
-                    trajectory.insert(std::make_shared<simulation_state>(state));
+                    trajectory.insert(std::make_shared<SimulationState>(state));
                 } catch (const std::exception& exception) {
                     std::cout << " tried to insert " << state << std::endl;
                     std::cout << exception.what() << std::endl;
@@ -323,7 +323,7 @@ namespace StochasticSimulation {
 
             // Insert initial state
             try {
-                 trajectory.insert(std::make_shared<simulation_state>(simulation_state{reactants, t}));
+                 trajectory.insert(std::make_shared<SimulationState>(SimulationState{reactants, t}));
             } catch (const std::exception& exception) {
                 std::cout << exception.what() << std::endl;
             }
@@ -363,7 +363,7 @@ namespace StochasticSimulation {
 
                 t += r.delay;
 
-                simulation_state state{last_state->reactants, t};
+                SimulationState state{last_state->reactants, t};
 
                 if (
                         std::all_of(r.from.begin(), r.from.end(), [&state](const Reactant& e){return state.reactants.get(e.name).amount >= e.required;}) &&
@@ -381,7 +381,7 @@ namespace StochasticSimulation {
                 }
 
                 try {
-                    trajectory.insert(std::make_shared<simulation_state>(state));
+                    trajectory.insert(std::make_shared<SimulationState>(state));
                 } catch (const std::exception& exception) {
                     std::cout << " tried to insert " << state << std::endl;
                     std::cout << exception.what() << std::endl;

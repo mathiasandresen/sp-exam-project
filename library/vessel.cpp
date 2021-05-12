@@ -10,7 +10,7 @@ namespace Simulation {
 
     void Vessel::visualize_reactions() {
         std::stringstream str;
-        StochasticSimulation::symbol_table<std::string> node_map{};
+        StochasticSimulation::SymbolTable<std::string> node_map{};
 
         str << "digraph {" << std::endl;
 

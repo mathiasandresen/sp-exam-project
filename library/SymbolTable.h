@@ -2,8 +2,8 @@
 // Created by Mathias on 10-05-2021.
 //
 
-#ifndef SP_EXAM_PROJECT_SYMBOL_TABLE_H
-#define SP_EXAM_PROJECT_SYMBOL_TABLE_H
+#ifndef SP_EXAM_PROJECT_SYMBOLTABLE_H
+#define SP_EXAM_PROJECT_SYMBOLTABLE_H
 
 #include <unordered_map>
 #include <string>
@@ -28,7 +28,7 @@ namespace StochasticSimulation {
 
     template<typename T>
 
-    class symbol_table: public std::iterator<std::output_iterator_tag, T> {
+    class SymbolTable: public std::iterator<std::output_iterator_tag, T> {
         using map_type = std::unordered_map<std::string, T>;
     private:
         map_type map{};
@@ -36,13 +36,13 @@ namespace StochasticSimulation {
         using iterator = typename map_type::iterator;
         using const_iterator = typename map_type::const_iterator;
 
-        symbol_table<T>() = default;
+        SymbolTable<T>() = default;
 
-        symbol_table<T>(const symbol_table<T>& a) = default;
+        SymbolTable<T>(const SymbolTable<T>& a) = default;
 
-//        ~symbol_table() = default;
+//        ~SymbolTable() = default;
 //
-//        symbol_table& operator=(const symbol_table&) = default;
+//        SymbolTable& operator=(const SymbolTable&) = default;
 
         void put(const std::string& key, T value) {
             if (!map.contains(key)) {
@@ -95,4 +95,4 @@ namespace StochasticSimulation {
     };
 }
 
-#endif //SP_EXAM_PROJECT_SYMBOL_TABLE_H
+#endif //SP_EXAM_PROJECT_SYMBOLTABLE_H

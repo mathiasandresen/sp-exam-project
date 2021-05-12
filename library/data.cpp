@@ -13,23 +13,23 @@ namespace StochasticSimulation {
         return Reaction{{*this}, {std::move(other)}};
     }
 
-    Reaction Reactant::operator>>=(reactant_collection other) {
+    Reaction Reactant::operator>>=(ReactantCollection other) {
         return Reaction{{*this}, std::move(other)};
     }
 
-    reactant_collection Reactant::operator+(const Reactant& other) {
-        return reactant_collection{*this, other};
+    ReactantCollection Reactant::operator+(const Reactant& other) {
+        return ReactantCollection{*this, other};
     }
 
     bool Reactant::operator<(Reactant other) const {
         return name < other.name;
     }
 
-    Reaction reactant_collection::operator>>=(Reactant other) {
+    Reaction ReactantCollection::operator>>=(Reactant other) {
         return Reaction{*this, {std::move(other)}};
     }
 
-    Reaction reactant_collection::operator>>=(reactant_collection other) {
+    Reaction ReactantCollection::operator>>=(ReactantCollection other) {
         return Reaction{*this, std::move(other)};
     }
 
@@ -54,7 +54,7 @@ namespace StochasticSimulation {
         return s << " - " << reaction.rate << " }";
     }
 
-    void Reaction::compute_delay2(simulation_state& state, std::default_random_engine &engine) {
+    void Reaction::compute_delay2(SimulationState& state, std::default_random_engine &engine) {
         size_t reactant_amount{1};
         size_t catalyst_amount{1};
 
@@ -83,8 +83,8 @@ namespace StochasticSimulation {
         }
     }
 
-    void Reaction::compute_delay(simulation_state& state, std::default_random_engine &engine) {
-        lastDelayState = std::make_shared<simulation_state>(state);
+    void Reaction::compute_delay(SimulationState& state, std::default_random_engine &engine) {
+        lastDelayState = std::make_shared<SimulationState>(state);
 
         size_t reactant_amount{1};
         size_t catalyst_amount{1};
@@ -108,7 +108,7 @@ namespace StochasticSimulation {
         }
     }
 
-    std::ostream &operator<<(std::ostream &s, const simulation_state& state) {
+    std::ostream &operator<<(std::ostream &s, const SimulationState& state) {
         s << "{" << std::endl
             << "time: " << state.time << "," << std::endl
             << "reactants: {" << std::endl;

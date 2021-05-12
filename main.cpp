@@ -1,6 +1,6 @@
 #include <iostream>
 #include "library/simulation.h"
-#include "library/symbol_table.h"
+#include "library/SymbolTable.h"
 #include <fstream>
 #include "library/reaction.h"
 #include "library/vessel.h"
@@ -160,7 +160,7 @@ private:
 public:
     size_t max_hospitalized{0};
 
-    void monitor(simulation_state &state) override {
+    void monitor(SimulationState &state) override {
         auto currently_hospitalized = state.reactants.get("H").amount;
 
         if (currently_hospitalized > max_hospitalized) {

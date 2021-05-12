@@ -21,7 +21,7 @@ namespace StochasticSimulation {
         return s << "}";
     }
 
-    double_t simulation_trajectory::compute_interpolated_value(const std::string& key, simulation_state& s0, simulation_state& s1, double_t x) {
+    double_t simulation_trajectory::compute_interpolated_value(const std::string& key, SimulationState& s0, SimulationState& s1, double_t x) {
         return
             s0.reactants.get(key).amount
             + ((
@@ -51,9 +51,9 @@ namespace StochasticSimulation {
 
         for (auto& trajectory: trajectories) {
             auto iterator = trajectory->begin();
-            simulation_state& s0 = *iterator->second;
+            SimulationState& s0 = *iterator->second;
             iterator++;
-            simulation_state& s1 = *iterator->second;
+            SimulationState& s1 = *iterator->second;
 
             double_t t{0};
 
@@ -61,7 +61,7 @@ namespace StochasticSimulation {
                 if (t >= s0.time) {
                     if (t <= s1.time) {
                         if (!mean_trajectory.contains(t)) {
-                            mean_trajectory.insert(std::make_shared<simulation_state>(simulation_state{{}, t}));
+                            mean_trajectory.insert(std::make_shared<SimulationState>(SimulationState{{}, t}));
                         }
 
                         for (auto& key: reactant_keys) {

@@ -13,7 +13,7 @@ add_library(
     stochastic-simulation
     library/simulation.cpp
     library/simulation.cpp
-    library/symbol_table.h
+        library/SymbolTable.h
     library/simulation_monitor.h
     library/data.h library/data.cpp library/reaction.h library/vessel.h library/reaction.cpp library/vessel.cpp)
 
