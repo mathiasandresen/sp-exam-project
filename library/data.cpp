@@ -5,8 +5,6 @@
 #include <iostream>
 #include <utility>
 #include "simulation.h"
-#include "data.h"
-
 
 namespace StochasticSimulation {
     Reaction Reactant::operator>>=(StochasticSimulation::Reactant other) {
@@ -21,7 +19,7 @@ namespace StochasticSimulation {
         return ReactantCollection{*this, other};
     }
 
-    bool Reactant::operator<(Reactant other) const {
+    bool Reactant::operator<(const Reactant& other) const {
         return name < other.name;
     }
 
@@ -84,8 +82,6 @@ namespace StochasticSimulation {
     }
 
     void Reaction::compute_delay(SimulationState& state, std::default_random_engine &engine) {
-        lastDelayState = std::make_shared<SimulationState>(state);
-
         size_t reactant_amount{1};
         size_t catalyst_amount{1};
 

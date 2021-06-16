@@ -1,0 +1,158 @@
+\documentclass[a4paper]{article}
+
+\usepackage[a4paper, total={18cm, 26cm}]{geometry}
+\usepackage[T1]{fontenc} % needed by beramono
+\usepackage{textcomp}
+% beramono.sty and MnSymbol.sty come with texlive-fonts-extra in Debian
+\usepackage[scaled=0.85]{beramono} % tt font supporting slshape and zero with dot
+\usepackage{MnSymbol} % fancy symbols for line-breaks
+\usepackage[utf8]{inputenc}
+\usepackage{listingsutf8}  % code listings, comes with texlive-latex-recommended
+%\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{verbatim}
+
+\protected\def\plusminus{\ensuremath{\pm}}
+\DeclareUnicodeCharacter{C2B1}{\plusminus}
+
+\lstset{
+  inputencoding=utf8,
+  literate={±}{\plusminus}1
+}
+
+\lstdefinestyle{bwC++}{
+  language=C++,morekeywords={constexpr},
+  basicstyle=\ttfamily,
+  keywordstyle=\bfseries,
+  stringstyle=\slshape,
+  commentstyle=\slshape,
+  morecomment=[s][\bfseries\slshape]{/**}{*/},
+  tabsize=4,
+  showstringspaces=false,
+  breaklines=true, breakatwhitespace=true,
+  prebreak={\hbox{\quad$\rhookswarrow$}},
+  postbreak={\hbox{$\lhookrightarrow$}},
+  breakindent={-8pt}, breakautoindent=false,
+  numbers=left, numberstyle=\tiny,
+  frameshape={RYR}{N}{N}{YYY} %frame=tb,frameround=tttt
+}
+
+\lstdefinestyle{colorC++}{
+  language=C++,morekeywords={constexpr},
+  basicstyle=\ttfamily,
+  keywordstyle=\textcolor{blue},
+  stringstyle=\slshape\textcolor{red!70!black},
+  commentstyle=\slshape\textcolor{green!50!black},
+  morecomment=[s][\bfseries\slshape\textcolor{green!50!black}]{/**}{*/},
+  tabsize=4,
+  showstringspaces=false,
+  breaklines=true, breakatwhitespace=true,
+  prebreak={\hbox{\quad\textcolor{red}{$\rhookswarrow$}}},
+  postbreak={\hbox{\textcolor{red}{$\lhookrightarrow$}}},
+  breakindent={-8pt}, breakautoindent=false,
+  numbers=left, numberstyle=\tiny,
+  frameshape={RYR}{N}{N}{YYY} %frame=tb,frameround=tttt
+}
+
+\lstdefinestyle{colorBash}{
+  language=bash,
+  basicstyle=\ttfamily,
+  keywordstyle=\textcolor{blue},
+  stringstyle=\slshape\textcolor{red!70!black},
+  commentstyle=\slshape\textcolor{green!50!black},
+  morecomment=[s][\bfseries\slshape\textcolor{green!50!black}]{/**}{*/},
+  tabsize=4,
+  showstringspaces=false,
+  breaklines=true, breakatwhitespace=true,
+  prebreak={\hbox{\quad\textcolor{red}{$\rhookswarrow$}}},
+  postbreak={\hbox{\textcolor{red}{$\lhookrightarrow$}}},
+  breakindent={-8pt}, breakautoindent=false,
+  numbers=left, numberstyle=\tiny,
+  frameshape={RYR}{N}{N}{YYY} %frame=tb,frameround=tttt
+}
+
+\title{SP Examp Project}
+\author{Mathias Andresen}
+\begin{document}
+\maketitle
+\lstinputlisting[style=colorBash,caption={CMakeLists.txt}]{./CMakeLists.txt}
+\lstinputlisting[style=colorBash,caption={AUTHORS.md}]{./venv/Lib/site-packages/pandas-1.2.4.dist-info/AUTHORS.md}
+\lstinputlisting[style=colorC++,caption={data.h}]{./library/data.h}
+\lstinputlisting[style=colorC++,caption={my-thread-pool.h}]{./library/my-thread-pool.h}
+\lstinputlisting[style=colorC++,caption={simulation.h}]{./library/simulation.h}
+\lstinputlisting[style=colorC++,caption={simulation\_monitor.h}]{./library/simulation_monitor.h}
+\lstinputlisting[style=colorC++,caption={SymbolTable.h}]{./library/SymbolTable.h}
+\lstinputlisting[style=colorC++,caption={arrayobject.h}]{./venv/Lib/site-packages/numpy/core/include/numpy/arrayobject.h}
+\lstinputlisting[style=colorC++,caption={arrayscalars.h}]{./venv/Lib/site-packages/numpy/core/include/numpy/arrayscalars.h}
+\lstinputlisting[style=colorC++,caption={halffloat.h}]{./venv/Lib/site-packages/numpy/core/include/numpy/halffloat.h}
+\lstinputlisting[style=colorC++,caption={ndarrayobject.h}]{./venv/Lib/site-packages/numpy/core/include/numpy/ndarrayobject.h}
+\lstinputlisting[style=colorC++,caption={ndarraytypes.h}]{./venv/Lib/site-packages/numpy/core/include/numpy/ndarraytypes.h}
+\lstinputlisting[style=colorC++,caption={noprefix.h}]{./venv/Lib/site-packages/numpy/core/include/numpy/noprefix.h}
+\lstinputlisting[style=colorC++,caption={npy\_1\_7\_deprecated\_api.h}]{./venv/Lib/site-packages/numpy/core/include/numpy/npy_1_7_deprecated_api.h}
+\lstinputlisting[style=colorC++,caption={npy\_3kcompat.h}]{./venv/Lib/site-packages/numpy/core/include/numpy/npy_3kcompat.h}
+\lstinputlisting[style=colorC++,caption={npy\_common.h}]{./venv/Lib/site-packages/numpy/core/include/numpy/npy_common.h}
+\lstinputlisting[style=colorC++,caption={npy\_cpu.h}]{./venv/Lib/site-packages/numpy/core/include/numpy/npy_cpu.h}
+\lstinputlisting[style=colorC++,caption={npy\_endian.h}]{./venv/Lib/site-packages/numpy/core/include/numpy/npy_endian.h}
+\lstinputlisting[style=colorC++,caption={npy\_interrupt.h}]{./venv/Lib/site-packages/numpy/core/include/numpy/npy_interrupt.h}
+\lstinputlisting[style=colorC++,caption={npy\_math.h}]{./venv/Lib/site-packages/numpy/core/include/numpy/npy_math.h}
+\lstinputlisting[style=colorC++,caption={npy\_no\_deprecated\_api.h}]{./venv/Lib/site-packages/numpy/core/include/numpy/npy_no_deprecated_api.h}
+\lstinputlisting[style=colorC++,caption={npy\_os.h}]{./venv/Lib/site-packages/numpy/core/include/numpy/npy_os.h}
+\lstinputlisting[style=colorC++,caption={numpyconfig.h}]{./venv/Lib/site-packages/numpy/core/include/numpy/numpyconfig.h}
+\lstinputlisting[style=colorC++,caption={oldnumeric.h}]{./venv/Lib/site-packages/numpy/core/include/numpy/oldnumeric.h}
+\lstinputlisting[style=colorC++,caption={old\_defines.h}]{./venv/Lib/site-packages/numpy/core/include/numpy/old_defines.h}
+\lstinputlisting[style=colorC++,caption={bitgen.h}]{./venv/Lib/site-packages/numpy/core/include/numpy/random/bitgen.h}
+\lstinputlisting[style=colorC++,caption={distributions.h}]{./venv/Lib/site-packages/numpy/core/include/numpy/random/distributions.h}
+\lstinputlisting[style=colorC++,caption={ufuncobject.h}]{./venv/Lib/site-packages/numpy/core/include/numpy/ufuncobject.h}
+\lstinputlisting[style=colorC++,caption={utils.h}]{./venv/Lib/site-packages/numpy/core/include/numpy/utils.h}
+\lstinputlisting[style=colorC++,caption={\_neighborhood\_iterator\_imp.h}]{./venv/Lib/site-packages/numpy/core/include/numpy/_neighborhood_iterator_imp.h}
+\lstinputlisting[style=colorC++,caption={\_numpyconfig.h}]{./venv/Lib/site-packages/numpy/core/include/numpy/_numpyconfig.h}
+\lstinputlisting[style=colorC++,caption={\_\_multiarray\_api.h}]{./venv/Lib/site-packages/numpy/core/include/numpy/__multiarray_api.h}
+\lstinputlisting[style=colorC++,caption={\_\_ufunc\_api.h}]{./venv/Lib/site-packages/numpy/core/include/numpy/__ufunc_api.h}
+\lstinputlisting[style=colorC++,caption={fortranobject.h}]{./venv/Lib/site-packages/numpy/f2py/src/fortranobject.h}
+\lstinputlisting[style=colorC++,caption={vessels.h}]{./vessels.h}
+\lstinputlisting[style=colorC++,caption={CMakeCCompilerId.c}]{./cmake-build-debug/CMakeFiles/3.17.5/CompilerIdC/CMakeCCompilerId.c}
+\lstinputlisting[style=colorC++,caption={CMakeCXXCompilerId.cpp}]{./cmake-build-debug/CMakeFiles/3.17.5/CompilerIdCXX/CMakeCXXCompilerId.cpp}
+\lstinputlisting[style=colorC++,caption={CMakeCCompilerId.c}]{./cmake-build-release/CMakeFiles/3.17.5/CompilerIdC/CMakeCCompilerId.c}
+\lstinputlisting[style=colorC++,caption={CMakeCXXCompilerId.cpp}]{./cmake-build-release/CMakeFiles/3.17.5/CompilerIdCXX/CMakeCXXCompilerId.cpp}
+\lstinputlisting[style=colorC++,caption={data.cpp}]{./library/data.cpp}
+\lstinputlisting[style=colorC++,caption={simulation.cpp}]{./library/simulation.cpp}
+\lstinputlisting[style=colorC++,caption={main.cpp}]{./main.cpp}
+\lstinputlisting[style=colorC++,caption={cpu\_asimd.c}]{./venv/Lib/site-packages/numpy/distutils/checks/cpu_asimd.c}
+\lstinputlisting[style=colorC++,caption={cpu\_asimddp.c}]{./venv/Lib/site-packages/numpy/distutils/checks/cpu_asimddp.c}
+\lstinputlisting[style=colorC++,caption={cpu\_asimdfhm.c}]{./venv/Lib/site-packages/numpy/distutils/checks/cpu_asimdfhm.c}
+\lstinputlisting[style=colorC++,caption={cpu\_asimdhp.c}]{./venv/Lib/site-packages/numpy/distutils/checks/cpu_asimdhp.c}
+\lstinputlisting[style=colorC++,caption={cpu\_avx.c}]{./venv/Lib/site-packages/numpy/distutils/checks/cpu_avx.c}
+\lstinputlisting[style=colorC++,caption={cpu\_avx2.c}]{./venv/Lib/site-packages/numpy/distutils/checks/cpu_avx2.c}
+\lstinputlisting[style=colorC++,caption={cpu\_avx512cd.c}]{./venv/Lib/site-packages/numpy/distutils/checks/cpu_avx512cd.c}
+\lstinputlisting[style=colorC++,caption={cpu\_avx512f.c}]{./venv/Lib/site-packages/numpy/distutils/checks/cpu_avx512f.c}
+\lstinputlisting[style=colorC++,caption={cpu\_avx512\_clx.c}]{./venv/Lib/site-packages/numpy/distutils/checks/cpu_avx512_clx.c}
+\lstinputlisting[style=colorC++,caption={cpu\_avx512\_cnl.c}]{./venv/Lib/site-packages/numpy/distutils/checks/cpu_avx512_cnl.c}
+\lstinputlisting[style=colorC++,caption={cpu\_avx512\_icl.c}]{./venv/Lib/site-packages/numpy/distutils/checks/cpu_avx512_icl.c}
+\lstinputlisting[style=colorC++,caption={cpu\_avx512\_knl.c}]{./venv/Lib/site-packages/numpy/distutils/checks/cpu_avx512_knl.c}
+\lstinputlisting[style=colorC++,caption={cpu\_avx512\_knm.c}]{./venv/Lib/site-packages/numpy/distutils/checks/cpu_avx512_knm.c}
+\lstinputlisting[style=colorC++,caption={cpu\_avx512\_skx.c}]{./venv/Lib/site-packages/numpy/distutils/checks/cpu_avx512_skx.c}
+\lstinputlisting[style=colorC++,caption={cpu\_f16c.c}]{./venv/Lib/site-packages/numpy/distutils/checks/cpu_f16c.c}
+\lstinputlisting[style=colorC++,caption={cpu\_fma3.c}]{./venv/Lib/site-packages/numpy/distutils/checks/cpu_fma3.c}
+\lstinputlisting[style=colorC++,caption={cpu\_fma4.c}]{./venv/Lib/site-packages/numpy/distutils/checks/cpu_fma4.c}
+\lstinputlisting[style=colorC++,caption={cpu\_neon.c}]{./venv/Lib/site-packages/numpy/distutils/checks/cpu_neon.c}
+\lstinputlisting[style=colorC++,caption={cpu\_neon\_fp16.c}]{./venv/Lib/site-packages/numpy/distutils/checks/cpu_neon_fp16.c}
+\lstinputlisting[style=colorC++,caption={cpu\_neon\_vfpv4.c}]{./venv/Lib/site-packages/numpy/distutils/checks/cpu_neon_vfpv4.c}
+\lstinputlisting[style=colorC++,caption={cpu\_popcnt.c}]{./venv/Lib/site-packages/numpy/distutils/checks/cpu_popcnt.c}
+\lstinputlisting[style=colorC++,caption={cpu\_sse.c}]{./venv/Lib/site-packages/numpy/distutils/checks/cpu_sse.c}
+\lstinputlisting[style=colorC++,caption={cpu\_sse2.c}]{./venv/Lib/site-packages/numpy/distutils/checks/cpu_sse2.c}
+\lstinputlisting[style=colorC++,caption={cpu\_sse3.c}]{./venv/Lib/site-packages/numpy/distutils/checks/cpu_sse3.c}
+\lstinputlisting[style=colorC++,caption={cpu\_sse41.c}]{./venv/Lib/site-packages/numpy/distutils/checks/cpu_sse41.c}
+\lstinputlisting[style=colorC++,caption={cpu\_sse42.c}]{./venv/Lib/site-packages/numpy/distutils/checks/cpu_sse42.c}
+\lstinputlisting[style=colorC++,caption={cpu\_ssse3.c}]{./venv/Lib/site-packages/numpy/distutils/checks/cpu_ssse3.c}
+\lstinputlisting[style=colorC++,caption={cpu\_vsx.c}]{./venv/Lib/site-packages/numpy/distutils/checks/cpu_vsx.c}
+\lstinputlisting[style=colorC++,caption={cpu\_vsx2.c}]{./venv/Lib/site-packages/numpy/distutils/checks/cpu_vsx2.c}
+\lstinputlisting[style=colorC++,caption={cpu\_vsx3.c}]{./venv/Lib/site-packages/numpy/distutils/checks/cpu_vsx3.c}
+\lstinputlisting[style=colorC++,caption={cpu\_xop.c}]{./venv/Lib/site-packages/numpy/distutils/checks/cpu_xop.c}
+\lstinputlisting[style=colorC++,caption={extra\_avx512bw\_mask.c}]{./venv/Lib/site-packages/numpy/distutils/checks/extra_avx512bw_mask.c}
+\lstinputlisting[style=colorC++,caption={extra\_avx512dq\_mask.c}]{./venv/Lib/site-packages/numpy/distutils/checks/extra_avx512dq_mask.c}
+\lstinputlisting[style=colorC++,caption={extra\_avx512f\_reduce.c}]{./venv/Lib/site-packages/numpy/distutils/checks/extra_avx512f_reduce.c}
+\lstinputlisting[style=colorC++,caption={test\_flags.c}]{./venv/Lib/site-packages/numpy/distutils/checks/test_flags.c}
+\lstinputlisting[style=colorC++,caption={gfortran\_vs2003\_hack.c}]{./venv/Lib/site-packages/numpy/distutils/mingw/gfortran_vs2003_hack.c}
+\lstinputlisting[style=colorC++,caption={fortranobject.c}]{./venv/Lib/site-packages/numpy/f2py/src/fortranobject.c}
+\lstinputlisting[style=colorC++,caption={wrapmodule.c}]{./venv/Lib/site-packages/numpy/f2py/tests/src/array_from_pyobj/wrapmodule.c}
+\end{document}

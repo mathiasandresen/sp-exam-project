@@ -13,6 +13,7 @@
 
 namespace StochasticSimulation {
 
+    // Requirement 3 generic symbol table
     struct SymbolTableException : public std::exception
     {
         std::string message;
@@ -27,8 +28,7 @@ namespace StochasticSimulation {
     };
 
     template<typename T>
-
-    class SymbolTable: public std::iterator<std::output_iterator_tag, T> {
+    class SymbolTable {
         using map_type = std::unordered_map<std::string, T>;
     private:
         map_type map{};
@@ -38,17 +38,31 @@ namespace StochasticSimulation {
 
         SymbolTable<T>() = default;
 
-        SymbolTable<T>(const SymbolTable<T>& a) = default;
+        SymbolTable<T>(const SymbolTable<T>& a) {
+            map = a.map;
+        };
 
-//        ~SymbolTable() = default;
-//
-//        SymbolTable& operator=(const SymbolTable&) = default;
+        SymbolTable<T>(SymbolTable<T>&& a) {
+            map = std::move(a.map);
+        };
+
+        ~SymbolTable() = default;
+
+        SymbolTable<T>& operator=(const SymbolTable& a) {
+            map = a.map;
+            return *this;
+        };
+
+        SymbolTable<T>& operator=(SymbolTable&& a) {
+            map = std::move(a.map);
+            return *this;
+        };
 
         void put(const std::string& key, T value) {
             if (!map.contains(key)) {
                 map.insert_or_assign(key, value);
             } else {
-                throw SymbolTableException("Key already used");
+                throw SymbolTableException("Key " + key + " already used");
             }
         }
 
@@ -56,7 +70,7 @@ namespace StochasticSimulation {
             try {
                 return map.at(key);
             } catch (std::out_of_range& e) {
-                throw SymbolTableException("Key was not found in symbol table");
+                throw SymbolTableException("Key " + key + " was not found");
             }
         }
 
@@ -64,7 +78,7 @@ namespace StochasticSimulation {
             try {
                 return map.at(key);
             } catch (std::out_of_range& e) {
-                throw SymbolTableException("Key was not found in symbol table");
+                throw SymbolTableException("Key " + key + " was not found");
             }
         }
 

@@ -4,25 +4,27 @@ import pandas as pd
 import sys
 
 MODE = "debug"
+CUSTOM_FILE_NAME = None
 
 def covid_graph():
-    CSV_FILE_PATH = f"cmake-build-{MODE}/covid_output.csv"
+    CSV_FILE_PATH = f"cmake-build-{MODE}/{CUSTOM_FILE_NAME if CUSTOM_FILE_NAME else 'covid_output.csv'}"
 
     data = pd.read_csv(CSV_FILE_PATH)
 
     plt.plot(data["time"].values, data["S"].values, label="S")
     plt.plot(data["time"].values, data["E"].values, label="E")
     plt.plot(data["time"].values, data["I"].values, label="I")
-    plt.plot(data["time"].values, data["H"].values*1000, label="H")
+    plt.plot(data["time"].values, data["H"].values*1000, label="H*1000")
     plt.plot(data["time"].values, data["R"].values, label="R")
-    plt.title("test")
-    plt.xlabel("time")
+    plt.title("Covid19 graph with N=10000")
+    plt.xlabel("time, days")
+    plt.ylabel("population count")
     plt.legend()
     plt.show()
 
 
 def intro_graph():
-    CSV_FILE_PATH = f"cmake-build-{MODE}/intro_output.csv"
+    CSV_FILE_PATH = f"cmake-build-{MODE}/{CUSTOM_FILE_NAME if CUSTOM_FILE_NAME else 'intro_output.csv'}"
 
     data = pd.read_csv(CSV_FILE_PATH)
 
@@ -37,7 +39,7 @@ def intro_graph():
 
 
 def cir_graph():
-    CSV_FILE_PATH = f"cmake-build-{MODE}/circadian_output2.csv"
+    CSV_FILE_PATH = f"cmake-build-{MODE}/{CUSTOM_FILE_NAME if CUSTOM_FILE_NAME else 'circadian_output.csv'}"
 
     data = pd.read_csv(CSV_FILE_PATH)
 
@@ -51,27 +53,14 @@ def cir_graph():
     plt.show()
 
 
-def covid_delay_graph():
-    CSV_FILE_PATH = f"cmake-build-{MODE}/covid_delay_output.csv"
-
-    data = pd.read_csv(CSV_FILE_PATH)
-    
-    plt.plot(data["time"].values, data["r0"].values, label="r0", color="red")
-    plt.plot(data["time"].values, data["r1"].values, label="r1", color="green")
-    plt.plot(data["time"].values, data["r2"].values, label="r2", color="blue")
-    plt.plot(data["time"].values, data["r3"].values, label="r3", color="purple")
-    plt.plot(data["time"].values, data["r4"].values, label="r4", color="orange")
-    plt.title("Covid delay")
-    # plt.xlabel("time, hours")
-    # plt.ylabel("count")
-    plt.legend()
-    plt.show()
-
-
 if __name__ == "__main__":
     if len(sys.argv) > 1:
-        if len(sys.argv) > 2 and sys.argv[2] == "release":
-            MODE = "release"
+        if len(sys.argv) > 2:
+            MODE = sys.argv[2]
+
+            if (len(sys.argv) > 3):
+                CUSTOM_FILE_NAME = sys.argv[3]
+
             
         arg = sys.argv[1]
 

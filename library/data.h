@@ -12,8 +12,8 @@ namespace StochasticSimulation {
 
     struct Reactant {
         std::string name;
-        double_t amount; //TODO: should properly be fixed
-        size_t required{1}; //TODO: This should properly be changed
+        double_t amount; // double to allow for mean values
+        size_t required{1};
 
         Reactant(std::string name, size_t initial_amount):
                 name(std::move(name)),
@@ -33,14 +33,46 @@ namespace StochasticSimulation {
 
         ~Reactant() = default;
 
+        Reactant(const Reactant& a) {
+            name = a.name;
+            amount = a.amount;
+            required = a.required;
+        }
+
+        Reactant(Reactant&& a) {
+            name = std::move(a.name);
+            amount = std::move(a.amount);
+            required = std::move(a.required);
+        }
+
+        Reactant& operator=(Reactant&& a) {
+            name = std::move(a.name);
+            amount = std::move(a.amount);
+            required = std::move(a.required);
+
+            return *this;
+        }
+
+        Reactant& operator=(const Reactant& a) {
+            name = a.name;
+            amount = a.amount;
+            required = a.required;
+
+            return *this;
+        }
+
+        // Requirement 1 operator for DSEL
         Reaction operator>>=(Reactant other);
 
+        // Requirement 1 operator for DSEL
         Reaction operator>>=(ReactantCollection other);
 
+        // Requirement 1 operator for DSEL
         ReactantCollection operator+(const Reactant& other);
 
-        bool operator<(Reactant other) const;
+        bool operator<(const Reactant& other) const;
 
+        // Requirement 1 operator for DSEL
         Reactant operator*(size_t req) {
             required = req;
             return *this;
@@ -51,7 +83,9 @@ namespace StochasticSimulation {
     class ReactantCollection: public std::set<Reactant> {
     public:
         using std::set<Reactant>::set;
+        // Requirement 1 operator for DSEL
         Reaction operator>>=(Reactant other);
+        // Requirement 1 operator for DSEL
         Reaction operator>>=(ReactantCollection other);
     };
 
@@ -62,7 +96,6 @@ namespace StochasticSimulation {
         std::optional<std::vector<Reactant>> catalysts;
         double_t rate{};
         double_t delay{-1};
-        std::shared_ptr<SimulationState> lastDelayState;
 
         Reaction(std::set<Reactant> from, std::set<Reactant> to):
                 from(from),
@@ -105,9 +138,6 @@ namespace StochasticSimulation {
         SimulationState& operator=(const SimulationState &) = default;
         SimulationState& operator=(SimulationState&&) = default;
 
-//        SimulationState(const SimulationState&) = default;
-//        SimulationState& operator=(const SimulationState&) = default;
-//
         ~SimulationState() = default;
 
         friend std::ostream &operator<<(std::ostream &, const SimulationState &);

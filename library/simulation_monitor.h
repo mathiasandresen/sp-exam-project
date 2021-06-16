@@ -9,6 +9,8 @@
 #include "data.h"
 
 namespace StochasticSimulation {
+
+    // Requirement 7 classes for generic system state monitors
     class simulation_monitor {
     public:
         virtual void monitor(SimulationState& state) = 0;
